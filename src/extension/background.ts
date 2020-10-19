@@ -1,8 +1,8 @@
 // Message Interface
 interface Msg {
   action: string;
-  tabId: string;
-  payload: object;
+  tabId?: string;
+  payload?: object;
 }
 
 interface Connections {
@@ -13,11 +13,13 @@ interface Connections {
 const connections: Connections = {};
 
 // once background starts, start with cleared local storage
+// this only happens when we open chrome again, not on refresh
 chrome.storage.local.clear(function (): void {
   chrome.storage.local.get(null, function (result): void {});
 });
 
 // LISTEN for initial connection from dev tool
+// runs when devtool is connected
 chrome.runtime.onConnect.addListener(port => {
   const devToolsListener = (msg: Msg, port: object) => {
     const {tabId, action} = msg;
@@ -25,7 +27,6 @@ chrome.runtime.onConnect.addListener(port => {
     switch (action) {
       case 'devToolInitialized':
         connections[tabId] = port;
-
         // read and send back to dev tool current local storage for corresponding tabId & port
         chrome.storage.local.get(null, function (result) {
           connections[tabId].postMessage({
@@ -40,6 +41,19 @@ chrome.runtime.onConnect.addListener(port => {
           // if msg tabId provided, send time travel snapshot history to content-script
           chrome.tabs.sendMessage(Number(tabId), msg);
         }
+        break;
+
+      case 'persistState':
+        if (tabId) {
+          // if msg tabId provided, send persistState command to content-script
+          chrome.tabs.sendMessage(Number(tabId), msg);
+        }
+        break;
+      case 'throttleEdit':
+        if (tabId) {
+          chrome.tabs.sendMessage(Number(tabId), msg);
+        }
+        // window.postMessage({action: 'throttleChange'}, throttler);
         break;
 
       default:
@@ -125,7 +139,17 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
         }
       });
       break;
+    case 'persistSnapshots':
+      // getting the array of filtered snapshots that exists on locoal storage
+      chrome.storage.local.get(tabId, function (result) {
+        
+        connections[tabId].postMessage({
+          action: 'recordSnapshot',
+          payload: result[tabId],
+        });
+      });
 
+      
     default:
       break;
   }

@@ -2,12 +2,24 @@
 export type stateSnapshot = {
   filteredSnapshot: filteredSnapshot;
   componentAtomTree: componentAtomTree;
+  indexDiff?: number;
 };
+
+// used for the filter state hook
+export type stateSnapshotDiff = {
+  filteredSnapshot?: filteredSnapshotDiff;
+  componentAtomTree?: componentAtomTreeDiff;
+  indexDiff?: number;
+}
 
 export type filteredSnapshot = {
   // key of atom name with the value of an atom
   [atomName: string]: node;
 };
+
+export type filteredSnapshotDiff = {
+  [atomName: string]: nodeDiff;
+}
 
 // object of either atom or selector
 export type node = {
@@ -21,11 +33,32 @@ export type node = {
   nodeToNodeSubscription: string[];
 };
 
+export type nodeDiff = {
+  string?: string | string[];
+  contents?: any;
+  nodeDeps?: string[] | string[][];
+  nodeToNodeSubscription?: string[] | string [][];
+}
+
 export type componentAtomTree = {
   children: object[];
   name: string;
   tag: number;
+  recoilNodes: string[];
+  actualDuration: number;
+  treeBaseDuration: number;
+  wasSuspended: boolean;
 };
+
+export type componentAtomTreeDiff = {
+  children: object[] | object[][];
+  name: string | string[];
+  tag: number | number[];
+  recoilNodes: string[] | string[][];
+  actualDuration: number | number [];
+  treeBaseDuration: number | number[];
+  wasSuspended: boolean | boolean [];
+}
 
 //////////////////////////
 // TODO BE BETTER TYPED //
@@ -39,4 +72,8 @@ export type atom = {
 //////////////////////////
 export type selector = {
   [name: string]: any;
+};
+
+export type selectedTypes = {
+  [name: string]: string;
 };
